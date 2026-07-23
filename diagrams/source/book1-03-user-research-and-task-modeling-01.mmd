@@ -1,0 +1,28 @@
+flowchart LR
+    START((开始)) --> READY[未开始]
+    READY -->|用户确认目标| RUN[执行中]
+
+    subgraph WAIT["等待与恢复"]
+        USER[等待用户]
+        SYSTEM[等待外部系统]
+    end
+
+    RUN -->|缺少信息或需要授权| USER
+    USER -->|补充或确认| RUN
+    RUN -->|已提交请求| SYSTEM
+    SYSTEM -->|收到新反馈| RUN
+
+    RUN -->|部分目标达成| PART[部分完成]
+    PART -->|选择继续| RUN
+
+    subgraph END["终止结果"]
+        SUCCESS[成功]
+        FAILURE[失败]
+        CANCEL[已取消]
+    end
+
+    RUN -->|获得完成证据| SUCCESS
+    RUN -->|无法恢复或被拒绝| FAILURE
+    USER -->|用户取消| CANCEL
+    SYSTEM -->|取消且可终止| CANCEL
+    PART -->|接受当前结果| CANCEL

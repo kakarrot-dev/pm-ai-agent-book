@@ -1,0 +1,17 @@
+pm-ai-agent-book
+Copyright 2026 pm-ai-agent-book contributors
+
+This project contains adapted material from:
+
+  深入理解 AI Agent：设计原理与工程实践
+  Copyright Bojie Li and contributors
+  https://github.com/bojieli/ai-agent-book
+  Licensed under the Apache License, Version 2.0
+
+The material has been reorganized, rewritten, shortened, and supplemented for
+AI product managers. A chapter-level provenance record is available at:
+
+  references/source-migration-map.md
+
+This NOTICE file is provided to preserve attribution for redistributed and
+adapted material. It does not change the licensing terms described in LICENSE.

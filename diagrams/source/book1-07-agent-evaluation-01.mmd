@@ -1,0 +1,26 @@
+flowchart TB
+    A[业务目标]
+
+    subgraph OUT["结果层"]
+        B[业务结果]
+        C[任务完成]
+    end
+
+    subgraph DIAG["诊断层"]
+        D[过程质量]
+        E[用户体验]
+        F[成本与延迟]
+        G[风险]
+    end
+
+    A --> B
+    A --> C
+    C --> D
+    C --> E
+    C --> F
+    C --> G
+    D --> H[具体失败类型]
+    E --> H
+    F --> H
+    G --> H
+    H --> I[产品改进假设]

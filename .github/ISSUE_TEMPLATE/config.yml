@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 阅读总目录
+    url: https://github.com/kakarrot-dev/pm-ai-agent-book
+    about: 创建 Issue 前先确认对应篇章和章节。

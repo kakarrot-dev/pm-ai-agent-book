@@ -1,0 +1,25 @@
+flowchart LR
+    A[收到 Observation]
+
+    subgraph CLOSE["完成与等待"]
+        direction TB
+        B{完成证据成立}
+        D{需要用户输入或确认}
+        B -->|否| D
+    end
+
+    subgraph GUARD["继续执行门禁"]
+        direction TB
+        F{权限、风险或结果未知}
+        H{超预算或无进展}
+        F -->|否| H
+    end
+
+    A --> B
+    B -->|是| C[结束并返回证据]
+    D -->|是| E[持久化状态并等待]
+    D -->|否| F
+    F -->|是| G[停止自动执行]
+    H -->|是| I[熔断并说明剩余工作]
+    H -->|否| J[规划下一步]
+    J --> A

@@ -1,0 +1,25 @@
+name: 案例建议
+description: 建议新增或补充一个 AI Agent 产品案例
+title: "[案例] "
+body:
+  - type: input
+    id: scenario
+    attributes:
+      label: 产品场景
+      placeholder: 企业采购 Agent 的重复下单恢复
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: 它能帮助读者理解什么
+      description: 说明对应章节、产品判断和现有内容缺口。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 可公开依据
+      description: 请勿提交客户隐私、公司机密或无法公开验证的信息。
+    validations:
+      required: true

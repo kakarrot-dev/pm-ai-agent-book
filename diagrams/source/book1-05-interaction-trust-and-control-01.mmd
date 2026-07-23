@@ -1,0 +1,33 @@
+stateDiagram-v2
+    direction LR
+
+    [*] --> planned
+    planned: 计划待批准
+    running: 执行中
+    planned --> running: 用户批准计划
+
+    state "用户控制" as control {
+        approval: 等待授权
+        paused: 已暂停
+    }
+
+    state "人工处理" as human {
+        takeover: 人工接管
+    }
+
+    running --> approval: 遇到关键动作
+    approval --> running: 批准具体动作
+    running --> paused: 用户暂停
+    paused --> running: 恢复且状态有效
+    running --> takeover: 超范围或连续失败
+    takeover --> running: 处理后返回
+
+    approval --> cancelled: 用户拒绝并结束
+    paused --> cancelled: 用户取消
+    takeover --> cancelled: 人工结束任务
+    running --> completed: 获得完成证据
+
+    completed: 已完成
+    cancelled: 已取消
+    completed --> [*]
+    cancelled --> [*]

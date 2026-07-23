@@ -1,0 +1,18 @@
+# Licensing
+
+This repository uses two licenses:
+
+1. Book manuscripts, documentation, published SVG diagrams, and illustrations
+   are licensed under the Creative Commons Attribution-ShareAlike 4.0
+   International License. See `LICENSE-CONTENT`.
+2. Files under `scripts/` and `diagrams/source/`, together with other source
+   code, are licensed under the Apache License 2.0. See `LICENSE-CODE`.
+
+Content adapted from other projects remains subject to its original license and
+attribution requirements. See `references/source-migration-map.md` for
+provenance and `NOTICE` for retained attribution.
+
+SPDX identifiers:
+
+- Content: CC-BY-SA-4.0
+- Code: Apache-2.0

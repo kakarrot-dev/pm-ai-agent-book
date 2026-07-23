@@ -1,0 +1,26 @@
+flowchart LR
+    subgraph INPUT["版本化输入"]
+        D[评估集]
+        C[候选版本与配置]
+    end
+
+    D --> H[Eval Harness]
+    C --> H
+    H --> A[运行 Agent]
+    A --> T[结果、轨迹与成本]
+
+    subgraph REVIEW["并行评审"]
+        E[确定性检查]
+        J[模型或人工评审]
+    end
+
+    T --> E
+    T --> J
+    E --> R[分群报告]
+    J --> R
+    R --> G{发布门禁}
+    G -->|通过| P[灰度上线]
+    G -->|不通过| F[失败归因与修复]
+    F --> C
+    P --> O[线上 Trace 与反馈]
+    O --> D
