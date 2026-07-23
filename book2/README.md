@@ -2,6 +2,8 @@
 
 [开始阅读](00-introduction.md) · [返回项目首页](../README.md) · [查看入门篇](../book1/README.md)
 
+[![AI Agent 产品经理实战进阶篇封面](../assets/covers/book2-agent-product-engineering-cover.png)](00-introduction.md)
+
 ## 书稿定位
 
 这是一本面向 AI 产品经理的 Agent 产品工程教材。它不教读者围绕某个框架搭建项目，而是帮助读者理解：产品要求怎样落实到上下文、知识、记忆、工具、执行路径、用户控制、评估和生产系统中。

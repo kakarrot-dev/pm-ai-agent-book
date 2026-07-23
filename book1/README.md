@@ -2,6 +2,8 @@
 
 [开始阅读](00-introduction.md) · [返回项目首页](../README.md) · [进入进阶篇](../book2/00-introduction.md)
 
+[![AI Agent 产品经理实战入门篇封面](../assets/covers/book1-agent-product-method-cover.png)](00-introduction.md)
+
 ## 书稿定位
 
 这是一本面向 AI 产品经理的 Agent 产品教材。它不教读者从头实现一个 Agent，而是帮助读者回答一组更接近产品工作的关键问题：什么需求值得 Agent 化，应该给 Agent 多大自主权，怎样设计用户控制权，如何选择能力方案，又该怎样评估、上线和持续运营。

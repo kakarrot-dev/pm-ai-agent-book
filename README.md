@@ -4,6 +4,10 @@
 
 [开始阅读](book1/00-introduction.md) · [完整目录](#完整目录) · [参与贡献](CONTRIBUTING.md) · [写作规范](STYLE_GUIDE.md)
 
+| 入门篇：Agent 产品方法 | 进阶篇：Agent 产品工程 |
+| --- | --- |
+| [![AI Agent 产品经理实战入门篇封面](assets/covers/book1-agent-product-method-cover.png)](book1/00-introduction.md) | [![AI Agent 产品经理实战进阶篇封面](assets/covers/book2-agent-product-engineering-cover.png)](book2/00-introduction.md) |
+
 > 当前状态：两套教程正文已经完整收录，内容仍在持续校订。仓库优先维护 Markdown 书稿和可编辑图示，暂不维护网站、PDF 或配套工程脚手架。
 
 ## 两部分内容，各自解决什么问题
