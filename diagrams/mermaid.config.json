@@ -2,9 +2,9 @@
   "theme": "base",
   "look": "classic",
   "securityLevel": "strict",
+  "htmlLabels": false,
   "flowchart": {
     "curve": "basis",
-    "htmlLabels": true,
     "nodeSpacing": 42,
     "rankSpacing": 58,
     "padding": 16,

@@ -135,6 +135,15 @@ const run = (program, args) =>
 
 const validateSvgDimensions = async (file) => {
   const svg = await readFile(file, "utf8");
+  if (svg.includes("<foreignObject")) {
+    throw new Error(
+      [
+        `Unsupported HTML label in SVG: ${relative(root, file)}`,
+        "Use native SVG text labels so Markdown and document renderers cannot clip fixed-size foreignObject content.",
+      ].join("\n"),
+    );
+  }
+
   const viewBox = svg.match(
     /viewBox="0 0 ([\d.]+) ([\d.]+)"/,
   );

@@ -31,17 +31,12 @@ svg {
 .cluster-label span,
 .cluster-label p {
   font-weight: 650;
-  letter-spacing: 0.02em;
 }
 
 .edgeLabel,
 .edgeLabel p {
   border-radius: 4px;
   color: #514a42 !important;
-}
-
-.edgeLabel p {
-  padding: 2px 5px;
 }
 
 .flowchart-link,
@@ -53,11 +48,6 @@ svg {
 .nodeLabel,
 .edgeLabel {
   line-height: 1.45;
-}
-
-.nodeLabel,
-.label text {
-  font-weight: 540;
 }
 
 .stateGroup .state-title {
