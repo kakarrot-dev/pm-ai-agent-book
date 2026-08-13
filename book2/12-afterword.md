@@ -44,5 +44,5 @@ Agent 产品最终交付的也不是一套工程名词。用户需要的是一�
 <!-- chapter-navigation:start -->
 ---
 
-[上一篇：Production Engineering：把 Agent 变成可以持续经营的产品](10-production-engineering.md) · [篇章目录](README.md) · [返回项目首页](../README.md)
+[上一篇：Multi-Agent Engineering：把职责拆分变成可验证协作](11-multi-agent-engineering.md) · [篇章目录](README.md) · [返回项目首页](../README.md)
 <!-- chapter-navigation:end -->

@@ -16,7 +16,7 @@ Agent 的失败很少只属于一个组件。企业知识 Agent 引用旧制度�
 
 [查看 Mermaid 源码](../diagrams/source/book2-00-introduction-01.mmd)
 
-这条链路没有一个万能中心。Context 决定模型看到了什么，Retrieval 和 Memory 决定信息从哪里来，Tool Loop 与 Graph 决定怎样行动，Agent Experience 决定用户如何参与，Harness 与 Eval 负责产生证据，Reliability、Safety 和 Production 让系统能长期承担真实责任。
+这条链路没有一个万能中心。Context 决定模型看到了什么，Retrieval 和 Memory 决定信息从哪里来，Tool Loop 与 Graph 决定怎样行动，Agent Experience 决定用户如何参与，Harness 与 Eval 负责产生证据，Reliability、Safety 和 Production 让系统能长期承担真实责任；Multi-Agent 只在这些单 Agent 基础成立后扩展职责协作。
 
 ## 产品经理需要理解到什么程度
 
@@ -33,13 +33,15 @@ Agent 的失败很少只属于一个组件。企业知识 Agent 引用旧制度�
 
 同样，“执行失败后自动重试”也不够。团队需要知道哪些动作可以重试，哪些动作必须先查询外部结果，哪些不确定状态需要用户或人工接管。
 
-## 十个工程专题怎样分工
+## 十一个工程专题怎样分工
 
 前五篇解决 Agent 怎样形成一次行动：Prompt 与 Context 组织本轮输入，Retrieval 与 Knowledge 提供外部事实，Memory 管理跨时间信息，Tool Loop 推进行动，Graph 把状态和路径显式化。
 
 第六篇处理人与 Agent 的协作界面。用户是否理解计划、风险、等待和完成状态，会直接影响产品是否可信。
 
-后四篇解决系统怎样被证明并长期运行。Harness 与 Eval 生成可比较证据，Reliability 处理故障和恢复，Safety 约束不可接受行为，Production 把发布、观测、成本、运营和持续改进接起来。
+第七至十篇解决系统怎样被证明并长期运行。Harness 与 Eval 生成可比较证据，Reliability 处理故障和恢复，Safety 约束不可接受行为，Production 把发布、观测、成本、运营和持续改进接起来。
+
+第十一篇讨论 Multi-Agent Engineering。它不把复杂任务自动拆成多个角色，而是在单 Agent 基线不足时，用独立证据、权限隔离、Task Contract、Artifact 与 Evidence 交接、预算和故障控制证明拆分价值。
 
 这些边界有意保留交叉。Memory 会进入 Context，Safety 会限制 Tool，Eval 会检查 Reliability。章节划分是为了明确主要责任，不代表系统可以独立建设每一块。
 

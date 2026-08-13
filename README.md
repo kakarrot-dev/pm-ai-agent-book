@@ -44,6 +44,7 @@ flowchart LR
     D --> E[Harness 与 Eval]
     E --> F[可靠性与安全]
     F --> G[生产运营]
+    G --> H[多 Agent 协作]
 ```
 
 现有专题包括：
@@ -58,6 +59,7 @@ flowchart LR
 - Reliability Engineering
 - Safety Engineering
 - Production Engineering
+- Multi-Agent Engineering
 
 各专题的顺序、适用场景和阅读路径见 [book2/README.md](book2/README.md)。
 
@@ -95,7 +97,8 @@ flowchart LR
 | [8. Reliability Engineering](book2/08-reliability-engineering.md) | 系统怎样在失败后仍然保持业务正确？ |
 | [9. Safety Engineering](book2/09-safety-engineering.md) | 怎样限制 Agent 做出不可接受的行动？ |
 | [10. Production Engineering](book2/10-production-engineering.md) | 怎样把版本、发布、观测和运营接成闭环？ |
-| [后记](book2/11-afterword.md) | 怎样避免把 Engineering 变成术语清单？ |
+| [11. Multi-Agent Engineering](book2/11-multi-agent-engineering.md) | 怎样把职责拆分成可验证、可恢复且权限隔离的协作？ |
+| [后记](book2/12-afterword.md) | 怎样避免把 Engineering 变成术语清单？ |
 
 ## 适合谁阅读
 

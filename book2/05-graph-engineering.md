@@ -50,6 +50,47 @@ Agent 任务的路径更容易受到状态和环境反馈影响。一次工具�
 
 只要产品存在多步决策、条件分支、循环、并行、等待或恢复，它就已经有一张逻辑上的图。区别只是这张图由团队主动设计，还是散落在 Prompt、代码分支、数据库字段和人的经验里。
 
+## 先统一 Runtime 的核心对象
+
+图中的 State、Node 和 Edge 描述执行机制，产品还需要一组跨界面、运行时、存储、Trace 和运营都一致的业务对象。否则“任务”“会话”“一次执行”和“一个步骤”会被混用，恢复、计费和事故调查都找不到稳定主键。
+
+![Agent Runtime 的核心对象](../diagrams/svg/book2-05-graph-engineering-05.svg)
+
+[查看 Mermaid 源码](../diagrams/source/book2-05-graph-engineering-05.mmd)
+
+| 对象 | 稳定含义 | 关键字段 |
+| --- | --- | --- |
+| Agent | 一个版本化的运行主体，包含身份、指令、能力与权限边界 | `agent_id`、版本、owner、Skill / Tool、Policy |
+| Task | 用户或业务希望完成的目标，与一次聊天消息不同 | `task_id`、goal、constraints、deadline、completion_criteria |
+| Run | 对一个 Task 的一次执行尝试；恢复、重试或换版本可产生新 Run | `run_id`、agent_version、status、budget、started_at |
+| Step | Run 中可独立观察、持久化和恢复的工作单元 | `step_id`、type、input_ref、status、attempt、checkpoint |
+| Action | Step 内一次具体模型、工具或确定性执行 | `action_id`、actor、target、parameters、side_effect、result |
+| Artifact | 交给用户或下游消费的产物 | 文档、代码、表格、申请单、结构化结论 |
+| Evidence | 证明决策依据、Action 结果或任务完成的记录 | 来源片段、工具回执、测试结果、审批记录、业务状态 |
+
+这些对象不是都要展示给用户，却必须能互相追溯：哪个 Agent 版本为哪个 Task 发起了哪次 Run，哪个 Step 的哪项 Action 生成了某个 Artifact，又由哪些 Evidence 支持。
+
+Artifact 与 Evidence 尤其不能混用。一份“退款已完成”的总结是 Artifact；支付系统的退款状态、交易号和时间才是 Evidence。产物可以通过语言改善，证据必须来自有权威性的外部状态或可复核检查。
+
+Run 的状态应采用有限、可解释的枚举，而不是让每个模块自造文案。
+
+| Run 状态 | 含义 | 是否终态 |
+| --- | --- | --- |
+| `queued` | 已接受，尚未开始 | 否 |
+| `running` | 正在推进且允许产生新 Action | 否 |
+| `waiting_input` | 等待用户补充必要信息 | 否 |
+| `waiting_approval` | 等待用户或审核人批准具体动作 | 否 |
+| `waiting_external` | 等待外部系统、定时器或依赖任务 | 否 |
+| `paused` | 已阻止新 Action，并保存可恢复状态 | 否 |
+| `cancelling` | 已接受取消，正在处理在途 Action | 否 |
+| `cancelled` | 未执行部分已终止，已发生副作用已说明 | 是 |
+| `succeeded` | 完成条件已被 Evidence 验证 | 是 |
+| `partially_succeeded` | 只完成可交付的一部分，并列出未完成范围 | 是 |
+| `failed` | 当前策略无法完成，失败原因和恢复入口已记录 | 是 |
+| `result_unknown` | 在途副作用是否生效仍无法确认，禁止盲目重试 | 视核验能力决定 |
+
+状态转换由运行时依据真实事件执行。模型可以建议“需要等待”或“任务完成”，不能直接把 Run 写成 `succeeded`。所有终态都要附 `reason_code`；成功状态绑定完成证据，失败和取消状态绑定已产生的副作用与下一步。
+
 ## Graph Engineering 设计的五个对象
 
 ![Graph Engineering 的五个核心对象](image/05-graph-five-objects.png)
@@ -65,7 +106,11 @@ State 是当前任务的结构化快照。它不是完整聊天记录，也不�
 报销任务可能包含：
 
 ```yaml
+agent_id: expense-agent
 task_id: expense-20260723-001
+run_id: run-001
+current_step_id: verify-budget
+run_status: running
 user_goal: 报销出差交通费
 invoice_status: validated
 policy_version: travel-policy-2026-07
@@ -76,6 +121,7 @@ submission_status: pending
 evidence:
   - invoice-check-917
   - budget-query-382
+artifacts: []
 retry_count: 0
 waiting_for: null
 ```
@@ -146,15 +192,17 @@ validate_invoice
 
 出口也不只有“成功”和“失败”。真实产品通常至少需要：
 
-- `completed`：目标已完成且结果经过验证；
-- `waiting_user`：缺少用户信息或授权；
+- `succeeded`：目标已完成且结果经过验证；
+- `waiting_input`：缺少用户信息；
 - `waiting_approval`：等待外部审批；
-- `blocked`：受权限、制度或依赖阻塞；
+- `waiting_external`：等待外部依赖或定时核验；
+- `paused`：已停止产生新动作，可从 checkpoint 恢复；
+- `result_unknown`：副作用结果暂时无法确认；
 - `failed`：任务失败，且当前自动策略无法恢复；
 - `cancelled`：用户或系统主动取消；
-- `partial`：只完成了可交付的一部分。
+- `partially_succeeded`：只完成了可交付的一部分。
 
-退出状态要能驱动产品行为。`waiting_user` 应展示需要用户提供什么，`blocked` 应说明阻塞来源，`failed` 应保留恢复入口。只给用户一句“执行失败”，等于把内部状态重新藏了起来。
+退出状态要能驱动产品行为。`waiting_input` 应展示需要用户提供什么，`result_unknown` 应阻止盲目重试并进入核验，`failed` 应保留原因与恢复入口。只给用户一句“执行失败”，等于把内部状态重新藏了起来。
 
 ### Checkpoint：怎样保住已经完成的工作
 
@@ -450,6 +498,10 @@ Graph PRD 不需要复制工程代码，但必须让产品、算法、工程、�
 
 支持完成判断的系统证据：
 
+Artifact 与 Evidence：
+
+Agent / Task / Run 的标识与版本：
+
 不属于本任务的范围：
 ```
 
@@ -493,10 +545,15 @@ Graph PRD 不需要复制工程代码，但必须让产品、算法、工程、�
 
 | 状态 | 用户看到什么 | 系统保留什么 | 是否可恢复 | 恢复入口 |
 | --- | --- | --- | --- | --- |
-| completed |  |  | 否 |  |
-| waiting_user |  |  | 是 |  |
-| blocked |  |  | 视情况 |  |
+| succeeded |  |  | 否 |  |
+| waiting_input |  |  | 是 |  |
+| waiting_approval |  |  | 是 |  |
+| waiting_external |  |  | 是 |  |
+| paused |  |  | 是 |  |
+| result_unknown |  |  | 视核验结果 |  |
+| partially_succeeded |  |  | 视情况 |  |
 | failed |  |  | 视情况 |  |
+| cancelled |  |  | 否 |  |
 
 ### 7. 版本与变更
 
@@ -519,6 +576,7 @@ Graph PRD 不需要复制工程代码，但必须让产品、算法、工程、�
 - 用户一次完成率；
 - 人工接管后的最终完成率；
 - 错误副作用率。
+- Artifact 可交付率与 Evidence 完整率；
 
 ### 路径层
 
@@ -588,7 +646,7 @@ Graph PRD 不需要复制工程代码，但必须让产品、算法、工程、�
 
 ## 本章小结
 
-Graph Engineering 把 Agent 从一段隐含流程，变成一套显式的任务状态机。
+Graph Engineering 把 Agent 从一段隐含流程，变成一套显式的任务状态机。Agent、Task、Run、Step、Action、Artifact 与 Evidence 为界面、运行时、存储、Trace 和运营提供了共同语言。
 
 产品经理需要从可验证的完成状态出发，定义 State 中哪些事实支持下一步判断，把工作拆成有独立责任和恢复边界的 Node，用 Edge 表达确定条件与未知兜底，再补齐入口、出口、人工介入、checkpoint、幂等和版本迁移。
 

@@ -1,0 +1,12 @@
+flowchart LR
+    U[用户目标] --> C[Coordinator]
+    P[身份 权限 预算 Policy] --> C
+    C --> W1[Research Worker]
+    C --> W2[Analysis Worker]
+    C --> W3[Action Worker]
+    W1 --> A[Artifact 与 Evidence Registry]
+    W2 --> A
+    W3 --> A
+    A --> V[Verifier 与 Aggregator]
+    V --> C
+    C --> R[用户结果与未决项]

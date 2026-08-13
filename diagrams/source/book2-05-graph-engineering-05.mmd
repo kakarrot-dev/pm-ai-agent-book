@@ -1,0 +1,9 @@
+flowchart LR
+    A[Agent 版本与权限] --> T[Task 用户目标]
+    T --> R1[Run 首次执行]
+    T --> R2[Run 恢复或重试]
+    R1 --> S[Step 可恢复工作单元]
+    R2 --> S
+    S --> X[Action 模型或工具动作]
+    X --> O[Artifact 可交付产物]
+    X --> E[Evidence 完成与决策证据]

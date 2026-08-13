@@ -32,10 +32,11 @@ Production Engineering 把能力、体验、评估、可靠性、安全、成本
 
 一次 Agent 行为可能由多个版本共同决定：
 
-- 模型及参数；
-- Prompt 和上下文策略；
+- Agent 定义、Skill 与权限边界；
+- 模型提供方、模型版本、参数与路由策略；
+- Prompt、输出 Schema 和上下文策略；
 - 知识库与索引；
-- 工具定义；
+- Tool 定义、MCP Server 与协议能力；
 - Graph 或工作流；
 - 安全策略；
 - 评估器。
@@ -56,6 +57,20 @@ Trace 应记录能够还原行为的版本组合。只记录模型名称，无�
 
 模型升级也应走同样流程。新模型整体能力更强，不代表它在当前工具、Prompt 和任务分布上一定更好。
 
+## 把 Model / Provider Operations 做成产品能力
+
+生产系统不能假设一个模型、一个提供方和一个版本永远可用。多模型不是简单加一个下拉框，而是建立稳定的产品契约。
+
+**统一适配层**把不同提供方的请求、流式事件、结构化输出、Tool Calling、错误、用量和内容限制映射到内部规范。它不应抹平真实能力差异；某模型不支持的能力要显式暴露，不能静默伪装成功。
+
+**路由策略**至少考虑任务类型、风险等级、数据区域、上下文与多模态需求、实测质量、P95 延迟、并发限额和成功任务成本。路由结果要进入 Trace，才能解释同一功能为何出现不同结果。
+
+**降级与回退**必须守住不变量。替代模型可以回答更慢、减少自主步骤或退化到搜索，但不能绕过权限、确认、引用、输出 Schema、完成证据与审计。如果备用模型不满足某项硬门槛，应停用该能力或转人工，而不是为了可用性继续执行。
+
+**版本生命周期**包括候选评估、兼容性检查、灰度、观测、回滚和弃用迁移。提供方宣布模型弃用时，团队应能查出受影响的 Agent、Prompt、Schema、评估基线、客户和在途 Run，而不是临近截止日才全局搜索模型名称。
+
+Provider 级故障演练要覆盖限流、区域不可用、流式中断、工具能力缺失、返回格式变化和账单异常。切换成功的标准是产品契约仍成立，而不只是备用接口返回了文字。
+
 ## 观测要支持决策
 
 Agent 生产系统需要把一次用户任务串起来：
@@ -71,9 +86,43 @@ Agent 生产系统需要把一次用户任务串起来：
 
 日志量大不等于可观测。团队要能从用户投诉定位到具体步骤，再找到对应版本、证据和失败类别。
 
+## 用统一语义连接 Trace
+
+不同模型 SDK、Agent 框架和 MCP Client 容易产生彼此不兼容的 Trace。OpenTelemetry 的 Generative AI Semantic Conventions 正在定义一组跨提供方语义，包括生成式 AI 操作、提供方、模型、Agent、Prompt、Workflow、Tool Call 和 token 用量。
+
+截至本书本次修订，这套约定仍标记为 **Development**。它适合用作对外遥测映射层，不宜直接成为产品数据库和业务状态的唯一 Schema。内部应先有稳定的 `task_id`、`run_id`、`step_id`、`action_id`、Artifact、Evidence、状态和版本契约，再映射到 OpenTelemetry。
+
+| 内部观测对象 | 可映射的 OpenTelemetry GenAI 语义 | 仍需内部保留的内容 |
+| --- | --- | --- |
+| 模型操作 | `gen_ai.operation.name` | Task / Run / Step 的业务语义和状态转换 |
+| 提供方与模型 | `gen_ai.provider.name`、`gen_ai.request.model` | 路由原因、候选集合、降级触发与数据区域 |
+| Agent 版本 | `gen_ai.agent.id`、`gen_ai.agent.name`、`gen_ai.agent.version` | 权限、Skill、Policy 与发布批次 |
+| Prompt 与 Workflow | `gen_ai.prompt.version`、`gen_ai.workflow.name` | Schema、Context Policy、Graph 和评估版本 |
+| Tool Call | `gen_ai.tool.name`、`gen_ai.tool.call.id` | 权限校验、确认、幂等、副作用和业务证据 |
+| Token 用量 | `gen_ai.usage.input_tokens`、`gen_ai.usage.output_tokens` | 缓存、重试、工具、沙箱、人工和完整任务成本 |
+
+Prompt、模型输入输出、Tool 参数与结果可能包含凭据、个人信息和企业数据。OpenTelemetry 也把部分内容字段设计为需要显式启用的敏感数据。默认只记录诊断所需的结构化元数据；正文内容应经过授权、脱敏、截断、采样和保留期限控制。
+
+语义约定升级时要通过映射层兼容，不能让外部属性改名直接破坏告警、账单或运营查询。业务状态仍以运行时和权威系统为准，Trace 负责解释发生了什么，不负责替代事实。
+
+## 建立 AI / Agent Inventory
+
+团队需要一份类似 AI BOM 的运行清单，但不必等待某个单一标准才开始。它的目标是回答：生产中有哪些 Agent 能力、由哪些模型与依赖组成、能访问什么、谁负责、怎样评估、何时停用。
+
+| 清单字段 | 至少记录什么 |
+| --- | --- |
+| 身份与 owner | Agent / Skill / Tool / MCP Server / 模型 / 数据源的 ID、版本、责任人 |
+| 来源与完整性 | 提供方、仓库或分发来源、部署位置、审批或校验记录 |
+| 依赖关系 | 哪些 Agent、Workflow、客户和场景依赖它，变更会影响哪些路径 |
+| 数据与权限 | 可访问的数据域、租户、资源、动作、凭证类型和有效期 |
+| 发布证据 | Eval、Safety Case、红队、灰度、已知限制和批准范围 |
+| 生命周期 | 当前环境、发布时间、弃用日期、替代项、停用与回滚方法 |
+
+Inventory 必须从真实配置、发布系统和运行版本持续更新。手工表格可以作为起点，但长期若与运行环境分离，很快会变成无法用于事故处置的静态文档。发现模型、Skill 或 MCP Server 漏洞时，团队应能按依赖关系找到受影响的 Agent 与 Run，并执行定向停用。
+
 ## 成本是产品约束
 
-Agent 成本来自模型 token、检索、工具、沙箱、存储、评估和人工审核。平均每次调用费用通常不能代表单位经济性，因为一次用户任务可能包含多轮循环和失败恢复。
+Agent 成本来自模型输入、输出、推理 token、缓存读写、检索、工具、MCP Server、沙箱、存储、评估和人工审核。平均每次调用费用通常不能代表单位经济性，因为一次用户任务可能包含多轮循环和失败恢复，也可能因路由到不同提供方产生完全不同的成本结构。
 
 更有用的指标包括：
 
@@ -112,6 +161,8 @@ Agent 成本来自模型 token、检索、工具、沙箱、存储、评估和�
 | 安全 | 最小权限、隔离、审计和事故响应可用 |
 | 评估 | 基线、回归集、风险门禁和线上回流存在 |
 | 观测 | 一次任务可以端到端追踪 |
+| 模型运营 | 提供方路由、降级、不变量、弃用迁移和故障演练存在 |
+| 资产清单 | Agent、模型、Skill、Tool、MCP、数据和依赖可查询 |
 | 成本 | 有单位任务预算与异常告警 |
 | 发布 | 支持灰度、降级和回滚 |
 | 运营 | 支持团队能够调查、接管和补偿 |
@@ -144,7 +195,7 @@ Trace 只能提供记录。没有失败分类、告警、负责人和处置工�
 
 ## 本章小结
 
-Production Engineering 把 Agent 的版本、评估、灰度、观测、成本、支持和回滚接成持续经营系统。生产就绪不由一次演示或一个总分证明，而由团队是否能够发现问题、限制影响、恢复任务并持续改进来证明。
+Production Engineering 把 Agent 的版本、模型与提供方运营、评估、灰度、观测、资产清单、成本、支持和回滚接成持续经营系统。生产就绪不由一次演示或一个总分证明，而由团队是否能够发现问题、定位依赖、限制影响、恢复任务并持续改进来证明。
 
 ## 思考题
 
@@ -152,9 +203,16 @@ Production Engineering 把 Agent 的版本、评估、灰度、观测、成本�
 2. 严重退化发生后，可以降级单项能力还是只能整站回滚？
 3. 团队衡量的是每次模型调用成本，还是每个成功任务成本？
 4. 支持人员能否查询、暂停和接管失败任务？
+5. 某个模型、Skill 或 MCP Server 明天停用时，团队能否列出全部影响面并安全降级？
+
+## 延伸阅读
+
+- [OpenTelemetry Semantic Conventions for Generative AI](https://github.com/open-telemetry/semantic-conventions-genai)，当前处于 Development，提供 GenAI Client、Agent、MCP 与提供方遥测语义。
+- [Model Context Protocol：Architecture](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)，用于理解 MCP Host、Client、Server、能力协商与协议层观测边界。
+- [OWASP：Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)，用于检查 Agent 供应链、身份、记忆、协作和级联故障风险。
 
 <!-- chapter-navigation:start -->
 ---
 
-[上一篇：Safety Engineering：限制 Agent 能做出的不可接受行动](09-safety-engineering.md) · [篇章目录](README.md) · [下一篇：后记：别让 Engineering 变成新的术语清单](11-afterword.md)
+[上一篇：Safety Engineering：限制 Agent 能做出的不可接受行动](09-safety-engineering.md) · [篇章目录](README.md) · [下一篇：Multi-Agent Engineering：把职责拆分变成可验证协作](11-multi-agent-engineering.md)
 <!-- chapter-navigation:end -->

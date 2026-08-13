@@ -43,7 +43,8 @@ const books = [
       "08-reliability-engineering.md",
       "09-safety-engineering.md",
       "10-production-engineering.md",
-      "11-afterword.md",
+      "11-multi-agent-engineering.md",
+      "12-afterword.md",
     ],
   },
 ];
@@ -88,4 +89,9 @@ for (const book of books) {
   }
 }
 
-console.log("Updated navigation for 24 chapters.");
+const chapterCount = books.reduce(
+  (total, book) => total + book.chapters.length,
+  0,
+);
+
+console.log(`Updated navigation for ${chapterCount} chapters.`);

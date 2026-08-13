@@ -37,6 +37,34 @@ Anthropic 把固定代码路径称为 workflow，把由模型动态决定过程�
 
 如果四项都是否，固定工作流通常更便宜、更稳定，也更容易验收。
 
+## Tool、Skill、Workflow 与 MCP 怎样进入同一条 Loop
+
+Tool Loop 经常同时出现几种名称，但它们不处在同一层。
+
+| 对象 | 在 Loop 中的责任 | 需要单独治理的内容 |
+| --- | --- | --- |
+| Tool | 执行一个可描述、可校验的外部动作 | 参数、权限、风险、结果、幂等与补偿 |
+| Skill | 向 Agent 提供某类任务的可复用方法和能力组合 | 适用范围、版本、依赖与评估 |
+| Workflow | 用确定路径保护稳定步骤和状态转换 | 条件、等待、超时、恢复与版本迁移 |
+| Function / Tool Calling | 让模型提出结构化工具调用请求 | Schema、解析、校验与调用选择 |
+| MCP | 让 Host 通过 Client 发现和调用 Server 暴露的能力 | Server 来源、协议版本、能力、授权、审批与供应链 |
+
+在 MCP 架构中，Host 是用户正在使用的 AI 应用，Host 为每个 MCP Server 建立 Client 连接；Server 暴露 Tools、Resources 和 Prompts。Tools、Resources、Prompts 分别偏向模型、应用和用户控制，不能全部自动塞进模型工具列表。Host 还要在初始化时协商协议版本和能力，后续变更要通过发现结果或通知更新，不能把某次发现永久缓存成事实。
+
+一次 MCP Tool 调用进入 Loop 后，仍然执行同样的产品责任链：模型提出候选调用，Host 校验当前任务、身份、权限和风险，用户在必要时审批，Server 执行动作，Host 保存 Observation、证据和状态。MCP 解决连接与互操作，不替代业务授权、结果验证、停止条件、幂等或恢复。
+
+远程 MCP Server 还扩大了供应链边界。产品需求至少要记录：
+
+- Server 发布者、分发来源、部署位置和责任人；
+- 协议版本、协商到的能力与 Tool Schema 版本；
+- OAuth scope、目标资源和短期凭证策略；
+- Tools、Resources 与 Prompts 分别允许谁发现、选择和调用；
+- Schema 或能力变化后怎样重新评估、灰度和回滚；
+- Server 返回内容怎样脱敏、截断、留证和防止注入；
+- Server 不可用、被撤销或返回结果未知时怎样降级。
+
+当前 MCP 还提供通知以及可选的 Tasks 扩展，用于长时间请求的持久句柄与状态查询。这些机制能传递进度和结果，不应成为产品任务状态的唯一事实源。应用仍要维护自己的 `task_id`、`run_id`、授权、预算、完成证据和恢复策略，并明确如何与远端任务句柄对账。
+
 ## 一轮 Tool Loop 到底发生了什么
 
 ![一轮完整的 Tool Loop](image/04-tool-loop.png)
@@ -268,6 +296,9 @@ Agent 连续用相同参数调用同一工具，或者多轮状态没有变化�
 
 工具 1：
 - 用户可理解的动作：
+- 来源（本地 / 业务 API / MCP Server）：
+- 发布者、责任人、协议与 Schema 版本：
+- 发现到的能力与变更通知：
 - 输入参数：
 - 系统注入参数：
 - 结构、业务与权限校验：
@@ -278,6 +309,8 @@ Agent 连续用相同参数调用同一工具，或者多轮状态没有变化�
 - 结果未知时处理：
 - 副作用与恢复模式：
 - 风险等级与确认方式：
+- 身份、OAuth scope、目标资源与凭证有效期：
+- 供应链信任、内容处理与撤销策略：
 - 超时与费用：
 
 循环策略：
@@ -357,6 +390,10 @@ PRD 的重点不是规定框架或代码结构，而是让产品、算法、工�
 
 模型能输出合法 JSON，只证明调用格式可解析。工具是否选对、参数是否符合业务、结果是否被正确理解，还需要单独验证。
 
+### 接入 MCP 就完成了 Agent 能力
+
+MCP 让应用以统一方式发现和调用能力，不会替产品定义任务、Skill、Workflow、授权、审批、业务完成或恢复。Server 可连接也不代表它可信、稳定或适合自动调用。
+
 ### 把模型文字当成业务状态
 
 模型说“已退款”不能证明退款完成。最终状态必须来自业务系统或其他可核查证据。
@@ -379,7 +416,7 @@ PRD 的重点不是规定框架或代码结构，而是让产品、算法、工�
 
 ## 本章小结
 
-Tool Loop 把一次工具调用变成连续的产品决策：模型根据当前状态提出动作，系统完成参数、权限和风险校验，工具返回环境证据，运行时更新任务状态，再决定继续、等待或停止。
+Tool Loop 把一次工具调用变成连续的产品决策：模型根据当前状态提出动作，系统完成参数、权限和风险校验，工具返回环境证据，运行时更新任务状态，再决定继续、等待或停止。Skill、Workflow、Function Calling 与 MCP 可以参与这条链路，但分别承担方法封装、确定控制、结构化请求和连接协议责任。
 
 产品经理需要定义的不是“让 Agent 自己循环”，而是循环里的责任边界。工具契约要清楚，Observation 要能支持下一步，完成需要外部证据，副作用要能恢复，轮数和成本要有上限，每一种退出都要让用户知道当前发生了什么。
 
@@ -398,6 +435,9 @@ Tool Loop 把一次工具调用变成连续的产品决策：模型根据当前�
 - [OpenAI：Function Calling](https://platform.openai.com/docs/guides/function-calling)，工具定义、调用流程、参数 schema 与并行调用的官方说明。
 - [Anthropic：Building Effective Agents](https://www.anthropic.com/research/building-effective-agents)，讨论 workflow 与 agent 的边界、环境反馈、停止条件和工具设计。
 - [LangChain：Reflection Agents](https://blog.langchain.com/reflection-agents/)，展示 Reflection、外部反馈和固定循环上限之间的关系。
+- [Model Context Protocol：Architecture](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)，说明 Host、Client、Server、数据层、传输层与能力协商。
+- [Model Context Protocol：Server Concepts](https://modelcontextprotocol.io/docs/2026-07-28/learn/server-concepts)，说明 Tools、Resources、Prompts 的控制边界与安全要求。
+- [Model Context Protocol：Authorization](https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/authorization)，说明远程 Server 的 OAuth 授权与 scope 设计。
 
 <!-- chapter-navigation:start -->
 ---

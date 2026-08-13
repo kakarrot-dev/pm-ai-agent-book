@@ -60,6 +60,25 @@ Agent Experience Engineering 设计的不是聊天框样式，而是人与自主
 
 状态文案必须来自真实运行状态。模型生成一句“快完成了”不能代替调度器和外部系统证据。
 
+## 长任务要分开事件、结果与控制
+
+长任务不是一条持续不断的聊天回复。产品至少要区分四类契约。
+
+| 契约 | 回答的问题 | 最小内容 |
+| --- | --- | --- |
+| Event stream | 从上次看到以后发生了什么 | `event_id`、`sequence`、`run_id`、`step_id`、类型、时间、摘要与详情引用 |
+| Result | 当前最终或阶段性结果是什么 | Run 状态、Artifact、Evidence、未完成范围与下一步 |
+| Control | 用户希望执行器做什么 | `command_id`、pause / resume / cancel / handoff、目标 Run、期望版本 |
+| Degrade / Query | 实时通道失效时怎样恢复真实状态 | 按 `run_id` 查询快照、从 `last_sequence` 补事件、重连策略 |
+
+Event 应是可排序、可去重的事实记录。网络重连后，客户端用最后确认的 `sequence` 补齐缺口；重复事件不能导致重复通知或重复执行。进度摘要可以由模型生成，但事件类型、Run 状态和动作结果必须来自运行时。
+
+Result 是可查询的当前快照，不等于最后一条 Event。一次运行即使最后收到“模型生成完成”，也只有在完成证据齐全时才能进入 `succeeded`；部分结果要列出已经产生的 Artifact、尚未完成的范围以及是否可以继续。
+
+Control 是发给执行器的命令，不是聊天意图。系统收到取消后先返回“已接受取消”，再根据在途动作进入 `cancelling` 或 `cancelled`；无法撤销的外部副作用必须单独说明。控制命令要有幂等标识和版本检查，防止重连或多端操作重复生效。
+
+SSE、WebSocket、长轮询或普通轮询只是传输选择，不是产品状态源。实时通道中断时，客户端应通过查询接口恢复 Run 快照和缺失事件，不能把“连接断开”显示成“任务失败”，也不能因为收不到流就重新发起整个任务。
+
 ## 确认要绑定动作与后果
 
 低质量确认只问“是否继续”。有效确认应显示：
@@ -103,6 +122,8 @@ Agent Experience Engineering 设计的不是聊天框样式，而是人与自主
 
 ```yaml
 delegated_goal: 完成差旅预订
+task_id: travel-task-001
+run_id: travel-run-001
 visible_plan:
   - 查询合规选项
   - 提交推荐方案
@@ -116,9 +137,25 @@ confirmation:
     - refund_policy
 interrupt_actions:
   - pause
+  - resume
   - cancel
   - handoff
 status_source: runtime_state
+event_stream:
+  ordering: sequence
+  resume_from: last_acknowledged_sequence
+  deduplicate_by: event_id
+result:
+  artifacts:
+    - booking_record
+  evidence:
+    - provider_receipt
+control:
+  idempotency_key: command_id
+  optimistic_lock: run_version
+degrade:
+  query_by: run_id
+  recover_events_from: last_acknowledged_sequence
 completion_evidence:
   - booking_id
   - provider_status
@@ -135,6 +172,8 @@ completion_evidence:
 - 等待状态是否减少重复询问和重复提交；
 - 用户修改目标后，系统是否保留有效进度；
 - 暂停、取消和接管是否真正改变执行状态；
+- 断线重连后事件是否连续、无重复，Run 快照是否与执行器一致；
+- 控制命令是否被幂等处理，在途副作用是否被准确说明；
 - 失败后用户是否知道下一步；
 - 自动化减少了多少操作，又引入了多少监督负担。
 
@@ -160,7 +199,7 @@ completion_evidence:
 
 ## 本章小结
 
-Agent Experience Engineering 把委托、计划、状态、确认、控制和结果证据设计成一套协作界面。用户不需要监督每一个 token，但必须知道系统正在承担什么责任，什么时候需要介入，以及怎样停止或接管。
+Agent Experience Engineering 把委托、计划、事件、状态、结果、确认和控制设计成一套协作界面。用户不需要监督每一个 token，但必须知道系统正在承担什么责任，什么时候需要介入，以及怎样停止或接管。长任务还要能在实时通道失效后恢复真实 Run，而不是重新开始。
 
 ## 思考题
 
@@ -168,6 +207,7 @@ Agent Experience Engineering 把委托、计划、状态、确认、控制和结
 2. 系统显示的进度来自真实状态，还是模型生成的文案？
 3. 用户取消后，哪些外部动作已经无法撤回？
 4. 长任务失败时，人工能否接着当前状态继续？
+5. 实时连接中断并恢复后，界面能否补齐事件而不重复任务？
 
 <!-- chapter-navigation:start -->
 ---
