@@ -32,26 +32,26 @@
 
 ### 第一篇：设计模型每一步依据什么判断
 
-1. [Prompt 与 Context Engineering](01-prompt-and-context-engineering.md)：定义模型每一步应该看到什么，以及信息怎样写入、选择、压缩和隔离。
+1. [Prompt 与 Context Engineering](01-prompt-and-context-engineering.md)：定义模型每一步应该看到什么，以及信息怎样写入、选择、压缩、隔离并形成状态契约。
 2. [Retrieval / Knowledge Engineering](02-retrieval-and-knowledge-engineering.md)：让 Agent 取得当前、可信、可引用且符合权限的外部知识。
 3. [Memory Engineering](03-memory-engineering.md)：决定哪些信息应该跨步骤或跨会话保留，以及怎样更新和遗忘。
 
 ### 第二篇：把行动过程变成可控机制
 
-4. [Tool Loop Engineering](04-tool-loop-engineering.md)：设计 Agent 怎样行动、观察、继续、停止和恢复。
+4. [Tool Loop Engineering](04-tool-loop-engineering.md)：设计 Agent 怎样按需发现工具、行动、观察、继续、停止和恢复。
 5. [Graph Engineering](05-graph-engineering.md)：把状态、执行单元、路径、人工介入和 Checkpoint 变成可执行机制。
 6. [Agent Experience Engineering](06-agent-experience-engineering.md)：让用户能够委托任务、理解进度、确认风险并随时接管。
 
 ### 第三篇：建立发布证据与故障边界
 
-7. [Harness + Eval Engineering](07-harness-and-eval-engineering.md)：稳定运行评估，比较候选版本并形成发布证据。
+7. [Harness + Eval Engineering](07-harness-and-eval-engineering.md)：区分能力上限与连续可靠性，定位首错并形成发布证据。
 8. [Reliability Engineering](08-reliability-engineering.md)：让 Agent 在超时、重试、依赖波动和进程中断后仍然保持正确。
 9. [Safety Engineering](09-safety-engineering.md)：限制越权、伤害和其他不可接受的行动。
 
 ### 第四篇：进入生产并扩展协作
 
 10. [Production Engineering](10-production-engineering.md)：把版本、发布、观测、成本、支持和运营接成生产闭环。
-11. [Multi-Agent Engineering](11-multi-agent-engineering.md)：只在单 Agent 基线不足时拆分职责，并用 Task、Artifact、Evidence、权限和协作状态形成可验证交接。
+11. [Multi-Agent Engineering](11-multi-agent-engineering.md)：只在单 Agent 基线不足时拆分职责，并治理交接、共因失效、资源冲突和人的接管能力。
 
 [引言](00-introduction.md)解释为什么产品经理需要理解这些工程问题，[后记](12-afterword.md)讨论怎样避免把 Engineering 变成新的术语清单。
 

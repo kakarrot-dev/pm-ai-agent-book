@@ -44,11 +44,11 @@
 
 7. [Agent 评估体系](07-agent-evaluation.md)：建立离线评估、灰度实验和线上指标闭环。
 8. [可靠性、安全与成本](08-reliability-safety-and-cost.md)：管理错误执行、权限、隐私和单位经济性。
-9. [上线、运营与持续迭代](09-launch-operations-and-iteration.md)：通过真实失败和用户反馈持续改进产品。
+9. [上线、运营与持续迭代](09-launch-operations-and-iteration.md)：把真实失败转成有来源、可验证、可灰度和可回滚的产品改动。
 
 ### 第四篇：从单点产品走向规模化
 
-10. [产品路线图与组织协作](10-roadmap-and-collaboration.md)：决定何时扩展多模态、多 Agent 或模型能力，并建立跨职能协作方式。
+10. [产品路线图与组织协作](10-roadmap-and-collaboration.md)：决定何时扩展多模态、多 Agent 或模型能力，并区分 RAG、Mid-training、SFT 与 RL 的采用条件。
 
 ## 两条贯穿全书的案例
 
